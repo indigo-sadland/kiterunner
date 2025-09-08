@@ -43,6 +43,8 @@ var (
 	profileName = ""
 
 	assetnoteWordlist = []string{}
+
+	proxyURL = ""
 )
 
 // scanCmd represents the scan command
@@ -96,6 +98,7 @@ kr scan domains.txt -W rafter.txt -D=0 # this just uses the words as a normal wo
 			scan.QuarantineThreshold(quarantineThreshold),
 			scan.PreflightDepth(preflightDepth),
 			scan.Precheck(!disablePrecheck),
+			scan.ProxyURL(proxyURL),
 		}
 
 		go func() {
@@ -159,4 +162,6 @@ func init() {
 	scanCmd.Flags().StringSliceVar(&filterAPIs, "filter-api", filterAPIs, "only scan apis matching this ksuid")
 
 	scanCmd.Flags().StringSliceVarP(&assetnoteWordlist, "assetnote-wordlist", "A", assetnoteWordlist, "use the wordlists from wordlist.assetnote.io. specify the type/name to use, e.g. apiroutes-210228. You can specify an additional maxlength to use only the first N values in the wordlist, e.g. apiroutes-210228;20000 will only use the first 20000 lines in that wordlist")
+
+	scanCmd.Flags().StringVar(&proxyURL, "proxy", proxyURL, "proxy URL to use for requests (e.g. http://127.0.0.1:8080)")
 }

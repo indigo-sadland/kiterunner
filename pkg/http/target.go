@@ -235,6 +235,24 @@ func (t *Target) HTTPClient(maxConnections int, timeout time.Duration) *HTTPClie
 	return t.httpClient
 }
 
+// HTTPClientWithProxy will return a HTTPClient configured for the particular target with the configured
+// maxConnections, timeout, and proxy URL.
+// This is cached after the first call, so subsequent changes to the Host, IsTLS, or proxy after the
+// first call of HTTPClientWithProxy will not be respected
+func (t *Target) HTTPClientWithProxy(maxConnections int, timeout time.Duration, proxyURL string) *HTTPClient {
+	if t.httpClient == nil {
+		if proxyURL != "" {
+			t.httpClient = NewHTTPClientWithProxy(t.Host(), t.IsTLS, proxyURL)
+		} else {
+			t.httpClient = NewHTTPClient(t.Host(), t.IsTLS)
+		}
+		t.httpClient.SetMaxConns(maxConnections)
+		t.httpClient.ReadTimeout = timeout
+		t.httpClient.WriteTimeout = timeout
+	}
+	return t.httpClient
+}
+
 // AppendBytes will append the full request details including the headers and scheme to the provided buffer
 // e.g. http://google.com:80/foo {x-forwarded-for:127.0.0.1}
 func (t *Target) AppendBytes(b []byte) []byte {

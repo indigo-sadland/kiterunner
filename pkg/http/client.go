@@ -2,6 +2,9 @@ package http
 
 import (
 	"bytes"
+	"fmt"
+	"net"
+	"net/url"
 	"time"
 
 	"github.com/assetnote/kiterunner/pkg/log"
@@ -30,6 +33,68 @@ func NewHTTPClient(host string, tls bool) *HTTPClient {
 	}
 }
 
+// NewHTTPClientWithProxy will create a http client configured specifically for requesting against the targetted host
+// through a proxy server. This is backed by the fasthttp.HostClient
+func NewHTTPClientWithProxy(host string, tls bool, proxyURL string) *HTTPClient {
+	client := &HTTPClient{
+		Addr:      host,
+		IsTLS:     tls,
+		TLSConfig: defaultTLSConfig,
+	}
+	
+	if proxyURL != "" {
+		client.Dial = createProxyDialFunc(proxyURL)
+	}
+	
+	return client
+}
+
+// createProxyDialFunc creates a DialFunc that connects through a proxy server
+func createProxyDialFunc(proxyURL string) fasthttp.DialFunc {
+	return func(addr string) (net.Conn, error) {
+		// Parse the proxy URL
+		proxy, err := url.Parse(proxyURL)
+		if err != nil {
+			fmt.Println("failed to parse proxy URL: %w", err)
+			return nil, fmt.Errorf("failed to parse proxy URL: %w", err)
+		}
+
+		// Connect to the proxy server
+		conn, err := net.Dial("tcp", proxy.Host)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect to proxy: %w", err)
+		}
+
+		// For HTTP proxies, we need to send a CONNECT request
+		if proxy.Scheme == "http" || proxy.Scheme == "https" {
+			// Send CONNECT request to the proxy
+			connectReq := fmt.Sprintf("CONNECT %s HTTP/1.1\r\nHost: %s\r\n\r\n", addr, addr)
+			_, err = conn.Write([]byte(connectReq))
+			if err != nil {
+				conn.Close()
+				return nil, fmt.Errorf("failed to send CONNECT request to proxy: %w", err)
+			}
+
+			// Read the response
+			buffer := make([]byte, 1024)
+			n, err := conn.Read(buffer)
+			if err != nil {
+				conn.Close()
+				return nil, fmt.Errorf("failed to read CONNECT response from proxy: %w", err)
+			}
+
+			response := string(buffer[:n])
+			if !bytes.HasPrefix([]byte(response), []byte("HTTP/1.1 200")) && 
+			   !bytes.HasPrefix([]byte(response), []byte("HTTP/1.0 200")) {
+				conn.Close()
+				return nil, fmt.Errorf("proxy CONNECT failed: %s", response)
+			}
+		}
+
+		return conn, nil
+	}
+}
+
 // Config provides all the options available to a request, this is used by DoClient
 type Config struct {
 	// Timeout is the duration to wait when performing a DoTimeout request
@@ -50,6 +115,9 @@ type Config struct {
 
 	// ExtraHeaders are added to the request last and will overwrite the route headers
 	ExtraHeaders []Header
+
+	// ProxyURL is the URL of the proxy server to use for requests
+	ProxyURL string `toml:"proxy_url" json:"proxy_url" mapstructure:"proxy_url"`
 
 	backupClient *BackupClient
 }

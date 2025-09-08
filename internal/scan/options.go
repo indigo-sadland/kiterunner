@@ -57,6 +57,9 @@ type ScanOptions struct {
 	BlacklistRedirectDomains []string
 	FilterAPIs               map[string]interface{}
 
+	// ProxyURL is the URL of the proxy server to use for requests
+	ProxyURL string
+
 	// internal fields for logging
 	extensions                 []string
 	dirsearchCompatabilityMode bool
@@ -89,6 +92,7 @@ func (s ScanOptions) KiterunnerOptions() []kiterunner.ConfigOption {
 		kiterunner.WildcardDetection(s.WildcardDetection),
 		kiterunner.TargetQuarantineThreshold(s.QuarantineThreshold),
 		kiterunner.SkipPreflight(!s.PrecheckTargets),
+		kiterunner.ProxyURL(s.ProxyURL),
 	}
 }
 
@@ -596,6 +600,13 @@ func QuarantineThreshold(n int64) ScanOption {
 func PreflightDepth(n int64) ScanOption {
 	return func(o *ScanOptions) error {
 		o.PreflightDepth = n
+		return nil
+	}
+}
+
+func ProxyURL(url string) ScanOption {
+	return func(o *ScanOptions) error {
+		o.ProxyURL = url
 		return nil
 	}
 }

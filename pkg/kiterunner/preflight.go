@@ -267,7 +267,12 @@ func preflightCheck(route *http.Route, t *http.Target, config *Config, basepath 
 		req.Header.Set(h.Key, h.Value)
 	}
 
-	c := t.HTTPClient(config.MaxConnPerHost, config.HTTP.Timeout)
+	var c *http.HTTPClient
+	if config.HTTP.ProxyURL != "" {
+		c = t.HTTPClientWithProxy(config.MaxConnPerHost, config.HTTP.Timeout, config.HTTP.ProxyURL)
+	} else {
+		c = t.HTTPClient(config.MaxConnPerHost, config.HTTP.Timeout)
+	}
 	if err := c.Do(req, resp); err != nil {
 		if strings.Contains(err.Error(), "too many open files") {
 			log.Fatal().Err(err).Msg("low fd limit detected. please increase your open file limit (ulimit -n 20000)")

@@ -138,6 +138,9 @@ func ScanDomainOrFile(ctx context.Context, domainOrFile string, opts ...ScanOpti
 			}
 			fields["content-length-ignore"] = ret
 		}
+		if len (s.ProxyURL) > 0 {
+			fields["proxy-url"] = s.ProxyURL
+		}
 
 		switch log.GetLogFormat() {
 		case "json":

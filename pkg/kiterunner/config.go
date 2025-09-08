@@ -188,3 +188,9 @@ func HTTPExtraHeaders(h []http.Header) ConfigOption {
 		o.HTTP.ExtraHeaders = append(o.HTTP.ExtraHeaders, h...)
 	}
 }
+
+func ProxyURL(url string) ConfigOption {
+	return func(o *Config) {
+		o.HTTP.ProxyURL = url
+	}
+}

@@ -137,6 +137,7 @@ Flags:
   -d, --preflight-depth int           when performing preflight checks, what directory depth do we attempt to check. 0 means that only the docroot is checked (default 1)
       --profile-name string           name for profile output file
       --progress                      a progress bar while scanning. by default enabled only on Stderr (default true)
+      --proxy                         proxy URL to use for requests (e.g. http://127.0.0.1:8080)
       --quarantine-threshold int      if the host return N consecutive hits, we quarantine the host as wildcard. Set to 0 to disable (default 10)
       --success-status-codes ints     which status codes whitelist as success. this is the default mode
   -t, --timeout duration              timeout to use on all requests (default 3s)
